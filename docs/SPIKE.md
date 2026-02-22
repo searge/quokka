@@ -1,4 +1,4 @@
-# Wombat Spike: 2-Week Proof of Concept
+# Quokka Spike: 2-Week Proof of Concept
 
 **Goal:** Validate Go tech stack and plugin architecture. Prove that Projects CRUD + forge-ovh-cli integration works. Decide GO/NO-GO for full rewrite.
 
@@ -173,7 +173,7 @@ GET    /api/v1/projects/{id}/containers       # List containers
 DELETE /api/v1/projects/{id}/containers/{cid} # Delete container
 ```
 
-**Deliverable:** Can create Proxmox LXC container via Wombat API
+**Deliverable:** Can create Proxmox LXC container via Quokka API
 
 ---
 

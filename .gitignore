@@ -1,4 +1,5 @@
 bin/
+migrations/
 coverage.out
 *.env
 .env

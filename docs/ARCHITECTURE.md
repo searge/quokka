@@ -1,6 +1,6 @@
-# Wombat Architecture
+# Quokka Architecture
 
-This document describes the architecture of Wombat Go rewrite — a modular monolith with plugin-based integrations.
+This document describes the architecture of Quokka Go rewrite — a modular monolith with plugin-based integrations.
 
 **Design principles:**
 
@@ -31,7 +31,7 @@ flowchart TB
     Store -->|SQL| DB
     Plugin -->|API Calls| External
 
-    subgraph "Wombat Backend"
+    subgraph "Quokka Backend"
         API
         Service
         Store
@@ -55,11 +55,11 @@ flowchart TB
 
 ## Module Structure
 
-Wombat uses **vertical slice architecture** — each domain is self-contained.
+Quokka uses **vertical slice architecture** — each domain is self-contained.
 
 ```mermaid
 flowchart TB
-    Root[Wombat Root]
+    Root[Quokka Root]
 
     Root --> CMD[cmd/]
     Root --> Internal[internal/]
@@ -404,7 +404,7 @@ package proxmox
 import (
     "context"
     "os/exec"
-    "github.com/Searge/wombat/internal/plugin"
+    "github.com/searge/quokka/internal/plugin"
 )
 
 type ProxmoxPlugin struct {
@@ -548,7 +548,7 @@ func Load() (*Config, error) {
             Port: getEnvInt("SERVER_PORT", 8080),
         },
         Database: DatabaseConfig{
-            URL: getEnv("DATABASE_URL", "postgres://localhost/wombat"),
+            URL: getEnv("DATABASE_URL", "postgres://localhost/quokka"),
         },
         Plugins: PluginConfig{
             ProxmoxCLI: getEnv("PROXMOX_CLI_PATH", "/usr/local/bin/forge-ovh-cli"),

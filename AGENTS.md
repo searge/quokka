@@ -1,6 +1,6 @@
 # AI Agent Coding Guidelines
 
-This document provides instructions for AI coding assistants (Claude, Cursor, Copilot, etc.) working on Wombat.
+This document provides instructions for AI coding assistants (Claude, Cursor, Copilot, etc.) working on Quokka.
 
 **Read this FIRST before writing any code.**
 
@@ -8,7 +8,7 @@ This document provides instructions for AI coding assistants (Claude, Cursor, Co
 
 ## Project Context
 
-Wombat is a Go rewrite of a Java platform for multi-project orchestration. Currently in spike phase.
+Quokka is a Go rewrite of a Java platform for multi-project orchestration. Currently in spike phase.
 
 **Key facts:**
 
@@ -454,7 +454,7 @@ package proxmox
 import (
     "context"
     "os/exec"
-    "github.com/Searge/wombat/internal/plugin"
+    "github.com/searge/quokka/internal/plugin"
 )
 
 type Plugin struct {

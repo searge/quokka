@@ -1,4 +1,4 @@
-# Wombat Greenfield Roadmap
+# Quokka Greenfield Roadmap
 
 **Prerequisite:** Spike completed successfully (see `docs/SPIKE.md`)
 
@@ -174,9 +174,9 @@ DELETE /api/v1/projects/{id}/members/{userId}
 - [ ] LDAP sync service
   - Import users from LDAP
   - Sync on schedule
-  - Map LDAP groups to Wombat roles
+  - Map LDAP groups to Quokka roles
 - [ ] Update user creation flow
-  - Create in Wombat → sync to LDAP
+  - Create in Quokka → sync to LDAP
 - [ ] LDAP authentication (optional, can use OIDC)
 
 **Deliverable:** User management synced with LDAP
