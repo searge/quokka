@@ -1,0 +1,16 @@
+.git
+.gitignore
+bin
+tmp
+coverage.out
+*.log
+.env
+*.env
+
+.vscode
+.idea
+
+README.md
+CONTRIBUTING.md
+CLAUDE.md
+AGENTS.md

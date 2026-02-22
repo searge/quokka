@@ -3,3 +3,5 @@ migrations/
 coverage.out
 *.env
 .env
+!.env.example
+!versions.env

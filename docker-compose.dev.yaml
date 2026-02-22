@@ -1,0 +1,8 @@
+services:
+  api:
+    build:
+      context: .
+      dockerfile: docker/Dockerfile
+      args:
+        GO_BUILDER_IMAGE: ${GO_BUILDER_IMAGE}
+        RUNTIME_IMAGE: ${RUNTIME_IMAGE}

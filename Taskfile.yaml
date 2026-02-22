@@ -5,6 +5,9 @@ version: "3"
 vars:
   BINARY_NAME: qka
   MODULE: github.com/searge/quokka
+  COMPOSE_ENV_FILES: --env-file versions.env --env-file .env
+  COMPOSE_FILES_DEV: -f docker-compose.yaml -f docker-compose.dev.yaml
+  COMPOSE_FILES_PROD: -f docker-compose.yaml
   VERSION:
     sh: git describe --tags --always --dirty 2>/dev/null || echo "dev"
 
@@ -70,3 +73,39 @@ tasks:
   clean:
     desc: Remove build artifacts
     cmds: [rm -rf bin/ coverage.out]
+
+  docker:config:dev:
+    desc: Render docker compose config for development (with build override)
+    cmds:
+      - docker compose {{.COMPOSE_ENV_FILES}} {{.COMPOSE_FILES_DEV}} config
+
+  docker:config:prod:
+    desc: Render docker compose config for production/staging (image only)
+    cmds:
+      - docker compose {{.COMPOSE_ENV_FILES}} {{.COMPOSE_FILES_PROD}} config
+
+  docker:build:dev:
+    desc: Build API image for development using compose override
+    cmds:
+      - docker compose {{.COMPOSE_ENV_FILES}} {{.COMPOSE_FILES_DEV}} build api
+
+  docker:up:dev:
+    desc: Start development stack (builds locally)
+    cmds:
+      - docker compose {{.COMPOSE_ENV_FILES}} {{.COMPOSE_FILES_DEV}} up -d --build
+
+  docker:down:dev:
+    desc: Stop development stack
+    cmds:
+      - docker compose {{.COMPOSE_ENV_FILES}} {{.COMPOSE_FILES_DEV}} down
+
+  docker:up:prod:
+    desc: Start production/staging stack (pull prebuilt images)
+    cmds:
+      - docker compose {{.COMPOSE_ENV_FILES}} {{.COMPOSE_FILES_PROD}} pull
+      - docker compose {{.COMPOSE_ENV_FILES}} {{.COMPOSE_FILES_PROD}} up -d
+
+  docker:down:prod:
+    desc: Stop production/staging stack
+    cmds:
+      - docker compose {{.COMPOSE_ENV_FILES}} {{.COMPOSE_FILES_PROD}} down
