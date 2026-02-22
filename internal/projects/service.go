@@ -4,9 +4,12 @@ import (
 	"context"
 	"errors"
 	"fmt"
+	"log/slog"
 	"regexp"
 	"time"
 
+	"github.com/go-playground/validator/v10"
+	"github.com/jackc/pgx/v5"
 	"github.com/searge/quokka/internal/plugin"
 )
 
@@ -23,6 +26,8 @@ var (
 type Service struct {
 	store    projectStore
 	registry pluginRegistry
+	log      *slog.Logger
+	validate *validator.Validate
 }
 
 type projectStore interface {
@@ -38,14 +43,28 @@ type pluginRegistry interface {
 }
 
 // NewService creates a new Service.
-func NewService(store *Store, registry *plugin.Registry) *Service {
-	return newService(store, registry)
+func NewService(store *Store, registry *plugin.Registry, logger *slog.Logger) *Service {
+	return newService(store, registry, logger)
 }
 
-func newService(store projectStore, registry pluginRegistry) *Service {
+func newService(store projectStore, registry pluginRegistry, logger *slog.Logger) *Service {
+	if logger == nil {
+		logger = slog.Default()
+	}
+
+	validate := validator.New()
+	err := validate.RegisterValidation("unix_name", func(fl validator.FieldLevel) bool {
+		return unixNameRegex.MatchString(fl.Field().String())
+	})
+	if err != nil {
+		panic(fmt.Errorf("failed to register unix_name validator: %w", err))
+	}
+
 	return &Service{
 		store:    store,
 		registry: registry,
+		log:      logger,
+		validate: validate,
 	}
 }
 
@@ -74,7 +93,7 @@ func (s *Service) Create(ctx context.Context, req CreateProjectRequest) (*Projec
 			// "500 Internal Error" when the DB creation actually succeeded.
 			// Future work: Track ProvisionStatus on the Project entity.
 			// Currently, we just log the failure.
-			fmt.Printf("WARNING: provisioning failed for project %s: %v\n", project.ID, err)
+			s.log.Warn("provisioning failed", "project_id", project.ID, "error", err)
 		}
 	}
 
@@ -87,11 +106,10 @@ func (s *Service) Get(ctx context.Context, id string) (*Project, error) {
 		if errors.Is(err, ErrInvalidProjectID) {
 			return nil, err
 		}
-		// In a real pgx setup, we should check for pgx.ErrNoRows.
-		// For the spike, assuming any error from store that's not parse
-		// for a single ID lookup could be not found or an actual db failure.
-		// A cleaner strategy is returning ErrProjectNotFound.
-		return nil, ErrProjectNotFound
+		if errors.Is(err, pgx.ErrNoRows) {
+			return nil, ErrProjectNotFound
+		}
+		return nil, err
 	}
 	return project, nil
 }
@@ -104,39 +122,44 @@ func (s *Service) List(ctx context.Context, limit, offset int32) ([]*Project, er
 }
 
 func (s *Service) Update(ctx context.Context, id string, req UpdateProjectRequest) (*Project, error) {
-	// First check if it exists
-	_, err := s.store.GetByID(ctx, id)
+	project, err := s.store.Update(ctx, id, req)
 	if err != nil {
 		if errors.Is(err, ErrInvalidProjectID) {
 			return nil, err
 		}
-		return nil, ErrProjectNotFound
+		if errors.Is(err, pgx.ErrNoRows) {
+			return nil, ErrProjectNotFound
+		}
+		return nil, err
 	}
-	return s.store.Update(ctx, id, req)
+	return project, nil
 }
 
 func (s *Service) Delete(ctx context.Context, id string) error {
-	// Check identity
-	_, err := s.store.GetByID(ctx, id)
+	err := s.store.Delete(ctx, id)
 	if err != nil {
 		if errors.Is(err, ErrInvalidProjectID) {
 			return err
 		}
-		return ErrProjectNotFound
+		if errors.Is(err, pgx.ErrNoRows) {
+			return ErrProjectNotFound
+		}
+		return err
 	}
-
-	return s.store.Delete(ctx, id)
+	return nil
 }
 
 func (s *Service) validateCreate(req CreateProjectRequest) error {
-	if len(req.Name) < 3 || len(req.Name) > 255 {
-		return errors.New("name must be between 3 and 255 characters")
-	}
-	if len(req.UnixName) < 3 || len(req.UnixName) > 100 {
-		return errors.New("unix_name must be between 3 and 100 characters")
-	}
-	if !unixNameRegex.MatchString(req.UnixName) {
-		return ErrInvalidUnixName
+	if err := s.validate.Struct(req); err != nil {
+		var validationErrors validator.ValidationErrors
+		if errors.As(err, &validationErrors) {
+			for _, fieldErr := range validationErrors {
+				if fieldErr.Field() == "UnixName" && fieldErr.Tag() == "unix_name" {
+					return ErrInvalidUnixName
+				}
+			}
+		}
+		return err
 	}
 	return nil
 }

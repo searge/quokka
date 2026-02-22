@@ -15,8 +15,8 @@ type Project struct {
 
 // CreateProjectRequest is the input payload for creating a new project.
 type CreateProjectRequest struct {
-	Name        string `json:"name"`
-	UnixName    string `json:"unix_name"`
+	Name        string `json:"name" validate:"required,min=3,max=255"`
+	UnixName    string `json:"unix_name" validate:"required,min=3,max=100,unix_name"`
 	Description string `json:"description,omitempty"`
 }
 

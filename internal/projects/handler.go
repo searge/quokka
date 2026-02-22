@@ -3,18 +3,24 @@ package projects
 import (
 	"encoding/json"
 	"errors"
-	"log"
+	"log/slog"
 	"net/http"
 
 	"github.com/go-chi/chi/v5"
+	"github.com/go-playground/validator/v10"
+	"github.com/searge/quokka/internal/platform"
 )
 
 type Handler struct {
 	service *Service
+	log     *slog.Logger
 }
 
-func NewHandler(service *Service) *Handler {
-	return &Handler{service: service}
+func NewHandler(service *Service, logger *slog.Logger) *Handler {
+	if logger == nil {
+		logger = slog.Default()
+	}
+	return &Handler{service: service, log: logger}
 }
 
 func (h *Handler) Routes() http.Handler {
@@ -32,20 +38,22 @@ func (h *Handler) Routes() http.Handler {
 func (h *Handler) Create(w http.ResponseWriter, r *http.Request) {
 	var req CreateProjectRequest
 	if err := json.NewDecoder(r.Body).Decode(&req); err != nil {
-		http.Error(w, "invalid JSON", http.StatusBadRequest)
+		platform.RespondError(w, http.StatusBadRequest, "INVALID_JSON", "invalid JSON")
 		return
 	}
 
 	project, err := h.service.Create(r.Context(), req)
 	if err != nil {
 		switch {
+		case errors.As(err, &validator.ValidationErrors{}):
+			platform.RespondValidationError(w, err)
 		case errors.Is(err, ErrProjectExists):
-			http.Error(w, err.Error(), http.StatusConflict)
+			platform.RespondError(w, http.StatusConflict, "PROJECT_EXISTS", err.Error())
 		case errors.Is(err, ErrInvalidUnixName):
-			http.Error(w, err.Error(), http.StatusBadRequest)
+			platform.RespondError(w, http.StatusBadRequest, "INVALID_UNIX_NAME", err.Error())
 		default:
-			log.Printf("internal error in projects handler: %v", err)
-			http.Error(w, "internal server error", http.StatusInternalServerError)
+			h.log.Error("internal err", "error", err)
+			platform.RespondError(w, http.StatusInternalServerError, "INTERNAL_ERROR", "internal server error")
 		}
 		return
 	}
@@ -53,20 +61,20 @@ func (h *Handler) Create(w http.ResponseWriter, r *http.Request) {
 	w.Header().Set("Content-Type", "application/json")
 	w.WriteHeader(http.StatusCreated)
 	if err := json.NewEncoder(w).Encode(project); err != nil {
-		log.Printf("failed to encode create project response: %v", err)
+		h.log.Error("failed to encode response", "error", err)
 	}
 }
 
 func (h *Handler) List(w http.ResponseWriter, r *http.Request) {
 	projects, err := h.service.List(r.Context(), 100, 0)
 	if err != nil {
-		http.Error(w, "internal server error", http.StatusInternalServerError)
+		platform.RespondError(w, http.StatusInternalServerError, "INTERNAL_ERROR", "internal server error")
 		return
 	}
 
 	w.Header().Set("Content-Type", "application/json")
 	if err := json.NewEncoder(w).Encode(projects); err != nil {
-		log.Printf("failed to encode list projects response: %v", err)
+		h.log.Error("failed to encode response", "error", err)
 	}
 }
 
@@ -76,19 +84,19 @@ func (h *Handler) GetByID(w http.ResponseWriter, r *http.Request) {
 	if err != nil {
 		switch {
 		case errors.Is(err, ErrProjectNotFound):
-			http.Error(w, "project not found", http.StatusNotFound)
+			platform.RespondError(w, http.StatusNotFound, "PROJECT_NOT_FOUND", "project not found")
 		case errors.Is(err, ErrInvalidProjectID):
-			http.Error(w, "invalid project id", http.StatusBadRequest)
+			platform.RespondError(w, http.StatusBadRequest, "INVALID_PROJECT_ID", "invalid project id")
 		default:
-			log.Printf("internal error in projects handler: %v", err)
-			http.Error(w, "internal server error", http.StatusInternalServerError)
+			h.log.Error("internal err", "error", err)
+			platform.RespondError(w, http.StatusInternalServerError, "INTERNAL_ERROR", "internal server error")
 		}
 		return
 	}
 
 	w.Header().Set("Content-Type", "application/json")
 	if err := json.NewEncoder(w).Encode(project); err != nil {
-		log.Printf("failed to encode get project response: %v", err)
+		h.log.Error("failed to encode response", "error", err)
 	}
 }
 
@@ -97,7 +105,7 @@ func (h *Handler) Update(w http.ResponseWriter, r *http.Request) {
 
 	var req UpdateProjectRequest
 	if err := json.NewDecoder(r.Body).Decode(&req); err != nil {
-		http.Error(w, "invalid JSON", http.StatusBadRequest)
+		platform.RespondError(w, http.StatusBadRequest, "INVALID_JSON", "invalid JSON")
 		return
 	}
 
@@ -105,19 +113,19 @@ func (h *Handler) Update(w http.ResponseWriter, r *http.Request) {
 	if err != nil {
 		switch {
 		case errors.Is(err, ErrProjectNotFound):
-			http.Error(w, "project not found", http.StatusNotFound)
+			platform.RespondError(w, http.StatusNotFound, "PROJECT_NOT_FOUND", "project not found")
 		case errors.Is(err, ErrInvalidProjectID):
-			http.Error(w, "invalid project id", http.StatusBadRequest)
+			platform.RespondError(w, http.StatusBadRequest, "INVALID_PROJECT_ID", "invalid project id")
 		default:
-			log.Printf("internal error in projects handler: %v", err)
-			http.Error(w, "internal server error", http.StatusInternalServerError)
+			h.log.Error("internal err", "error", err)
+			platform.RespondError(w, http.StatusInternalServerError, "INTERNAL_ERROR", "internal server error")
 		}
 		return
 	}
 
 	w.Header().Set("Content-Type", "application/json")
 	if err := json.NewEncoder(w).Encode(project); err != nil {
-		log.Printf("failed to encode update project response: %v", err)
+		h.log.Error("failed to encode response", "error", err)
 	}
 }
 
@@ -127,11 +135,12 @@ func (h *Handler) Delete(w http.ResponseWriter, r *http.Request) {
 	if err != nil {
 		switch {
 		case errors.Is(err, ErrProjectNotFound):
-			http.Error(w, "project not found", http.StatusNotFound)
+			platform.RespondError(w, http.StatusNotFound, "PROJECT_NOT_FOUND", "project not found")
 		case errors.Is(err, ErrInvalidProjectID):
-			http.Error(w, "invalid project id", http.StatusBadRequest)
+			platform.RespondError(w, http.StatusBadRequest, "INVALID_PROJECT_ID", "invalid project id")
 		default:
-			http.Error(w, "internal server error", http.StatusInternalServerError)
+			h.log.Error("internal err", "error", err)
+			platform.RespondError(w, http.StatusInternalServerError, "INTERNAL_ERROR", "internal server error")
 		}
 		return
 	}

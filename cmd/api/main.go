@@ -3,6 +3,7 @@ package main
 import (
 	"context"
 	"log"
+	"log/slog"
 	"net/http"
 	"os"
 	"os/signal"
@@ -39,10 +40,16 @@ func main() {
 		log.Fatalf("Failed to register proxmox plugin: %v", err)
 	}
 
+	// Initialize Logger
+	logger := slog.New(slog.NewJSONHandler(os.Stdout, &slog.HandlerOptions{
+		Level: slog.LevelInfo,
+	}))
+	slog.SetDefault(logger)
+
 	// Initialize Projects Domain
 	projectStore := projects.NewStore(dbpool)
-	projectService := projects.NewService(projectStore, pluginRegistry)
-	projectHandler := projects.NewHandler(projectService)
+	projectService := projects.NewService(projectStore, pluginRegistry, logger)
+	projectHandler := projects.NewHandler(projectService, logger)
 
 	// Initialize the router
 	router := platform.NewRouter()

@@ -85,7 +85,7 @@ func (m mockPlugin) Status(context.Context, string) (*plugin.StatusResult, error
 func (m mockPlugin) Deprovision(context.Context, string) error { return nil }
 
 func TestServiceCreateRejectsInvalidUnixName(t *testing.T) {
-	s := newService(mockStore{}, mockRegistry{})
+	s := newService(mockStore{}, mockRegistry{}, nil)
 
 	_, err := s.Create(context.Background(), CreateProjectRequest{
 		Name:     "Valid Name",
@@ -108,6 +108,7 @@ func TestServiceCreatePropagatesErrProjectExists(t *testing.T) {
 				return nil, plugin.ErrPluginNotFound
 			},
 		},
+		nil,
 	)
 
 	_, err := s.Create(context.Background(), CreateProjectRequest{
@@ -141,6 +142,7 @@ func TestServiceCreateCallsProvisionWithProjectData(t *testing.T) {
 				}, nil
 			},
 		},
+		nil,
 	)
 
 	_, err := s.Create(context.Background(), CreateProjectRequest{
@@ -163,6 +165,7 @@ func TestServiceGetPropagatesInvalidProjectID(t *testing.T) {
 			},
 		},
 		mockRegistry{},
+		nil,
 	)
 
 	_, err := s.Get(context.Background(), "not-a-uuid")

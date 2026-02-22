@@ -6,6 +6,7 @@ import (
 	"time"
 
 	"github.com/google/uuid"
+	"github.com/jackc/pgx/v5"
 	"github.com/jackc/pgx/v5/pgconn"
 	"github.com/jackc/pgx/v5/pgtype"
 	"github.com/jackc/pgx/v5/pgxpool"
@@ -61,7 +62,7 @@ func (s *Store) Create(ctx context.Context, req CreateProjectRequest) (*Project,
 func (s *Store) GetByID(ctx context.Context, id string) (*Project, error) {
 	uid, err := uuid.Parse(id)
 	if err != nil {
-		return nil, err
+		return nil, ErrInvalidProjectID
 	}
 
 	row, err := s.queries.GetProject(ctx, pgtype.UUID{Bytes: uid, Valid: true})
@@ -108,7 +109,7 @@ func (s *Store) List(ctx context.Context, limit, offset int32) ([]*Project, erro
 func (s *Store) Update(ctx context.Context, id string, req UpdateProjectRequest) (*Project, error) {
 	uid, err := uuid.Parse(id)
 	if err != nil {
-		return nil, err
+		return nil, ErrInvalidProjectID
 	}
 
 	params := db.UpdateProjectParams{
@@ -140,7 +141,14 @@ func (s *Store) Delete(ctx context.Context, id string) error {
 	if err != nil {
 		return ErrInvalidProjectID
 	}
-	return s.queries.DeleteProject(ctx, pgtype.UUID{Bytes: uid, Valid: true})
+	rowsAffected, err := s.queries.DeleteProject(ctx, pgtype.UUID{Bytes: uid, Valid: true})
+	if err != nil {
+		return err
+	}
+	if rowsAffected == 0 {
+		return pgx.ErrNoRows
+	}
+	return nil
 }
 
 func mapToDomainProject(row db.Project) *Project {
