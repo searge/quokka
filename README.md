@@ -1,47 +1,45 @@
-# wombat
+# Quokka
 
-A resilient software forge platform
+Quokka is a Go-based backend for provisioning and lifecycle management of infrastructure services in Forge environments.
 
-## Quick start
+It is designed as a clean replacement path for legacy backend logic: predictable APIs, explicit domain boundaries, and safer automation around external systems (Proxmox, GitLab, and other integrations).
+
+## Documentation
+
+- [Architecture](docs/ARCHITECTURE.md)
+- [Development roadmap](docs/ROADMAP.md)
+- [Spike notes](docs/SPIKE.md)
+- [Coding guidelines](docs/CODING_GUIDELINES.md)
+- [Contributing](CONTRIBUTING.md)
+
+## What Quokka Solves
+
+- Standardizes infrastructure workflows behind one API
+- Reduces manual operational steps in project/service provisioning
+- Isolates external provider logic via plugin-style integrations
+- Enables incremental migration away from legacy backend dependencies
+
+## Architecture Highlights
+
+- Modular monolith with clear domain modules
+- Layered flow: handler -> service -> store
+- PostgreSQL + migrations + typed queries
+- Integration boundaries suitable for adapters/plugins
+- API-first development approach for frontend and automation clients
+
+## Quick Start
 
 ```bash
-task setup       # go mod tidy + download
-task run -- hello World
-task dev         # fmt + lint + test + build
+task setup
+task dev
 ```
 
-## Structure
-
-```text
-.
-├── cmd/                    # Cobra commands (thin wrappers)
-│   ├── root.go
-│   ├── version.go
-│   └── hello.go            # example — rename or delete
-├── internal/
-│   └── config/             # app-private config (pure functions)
-├── pkg/
-│   └── display/            # Lipgloss output helpers (pure functions)
-├── main.go                 # cmd.Execute() only
-├── Taskfile.yaml
-└── .golangci.yaml
-```
-
-## Commands
+Run locally:
 
 ```bash
-task setup      # install dependencies
-task fmt        # go fmt ./...
-task lint       # go vet + golangci-lint
-task test       # go test -v ./...
-task build      # build to bin/wombat
-task run        # go run . [args after --]
-task dev        # full cycle: fmt lint test build
+task run -- server
 ```
 
-## Customise
+## Project Status
 
-1. Replace module name: `github.com/Searge/wombat`
-2. Rename binary in `Taskfile.yaml`: `BINARY_NAME`
-3. Add commands in `cmd/`, logic in `internal/` or `pkg/`
-4. For HTTP backend: add `internal/handler/`, `internal/service/`, `internal/store/`
+Active greenfield development. Scope and sequencing are tracked in `docs/` to keep this README concise.
