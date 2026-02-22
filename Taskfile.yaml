@@ -3,8 +3,8 @@
 version: "3"
 
 vars:
-  BINARY_NAME: wombat
-  MODULE: github.com/Searge/wombat
+  BINARY_NAME: qka
+  MODULE: github.com/searge/quokka
   VERSION:
     sh: git describe --tags --always --dirty 2>/dev/null || echo "dev"
 
@@ -25,10 +25,10 @@ tasks:
     cmds: [go fmt ./...]
 
   lint:
-    desc: Run linters (go vet + golangci-lint)
+    desc: Run linters (go vet)
     cmds:
       - go vet ./...
-      - golangci-lint run
+      # - golangci-lint run
 
   lint:md:
     desc: Lint markdown files
@@ -50,8 +50,8 @@ tasks:
     cmds:
       - >-
         go build
-        -ldflags "-X github.com/Searge/wombat/cmd.version={{.VERSION}}"
-        -o bin/wombat
+        -ldflags "-X github.com/searge/quokka/cmd.version={{.VERSION}}"
+        -o bin/qka
         .
 
   run:

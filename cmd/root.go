@@ -1,4 +1,4 @@
-// Package cmd implements the CLI for wombat.
+// Package cmd implements the CLI for qka.
 package cmd
 
 import (
@@ -12,10 +12,12 @@ import (
 var version = "dev"
 
 var rootCmd = &cobra.Command{
-	Use:   "wombat",
+	Use:   "qka",
 	Short: "A resilient software forge platform",
 	Run: func(cmd *cobra.Command, _ []string) {
-		_ = cmd.Help()
+		if err := cmd.Help(); err != nil {
+			fmt.Fprintln(os.Stderr, "failed to display help:", err)
+		}
 	},
 }
 

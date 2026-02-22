@@ -4,7 +4,7 @@ import (
 	"strings"
 	"testing"
 
-	"github.com/Searge/wombat/pkg/display"
+	"github.com/searge/quokka/pkg/display"
 )
 
 func TestHeader(t *testing.T) {

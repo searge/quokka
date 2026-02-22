@@ -7,7 +7,7 @@ import (
 
 	"github.com/spf13/cobra"
 
-	"github.com/Searge/wombat/pkg/display"
+	"github.com/searge/quokka/pkg/display"
 )
 
 var helloCmd = &cobra.Command{
